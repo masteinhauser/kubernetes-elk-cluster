@@ -19,14 +19,33 @@ spec:
     spec:
       serviceAccount: elasticsearch
       containers:
-      - name: kibana
-        image: bobrik/kibana
-        env:
-        -name: KIBANA_ES_URL
-         value: "http://elasticsearch:9200"
-        - name: KUBERNETES_TRUST_CERT
-          value: "true"
-        ports:
-        - containerPort: 5601
-          name: http
-          protocol: TCP
+        - name: elasticsearch-lb
+          image: pires/elasticsearch:lb
+          env:
+            - name: KUBERNETES_TRUST_CERT
+              value: "true"
+          ports:
+            - containerPort: 9200
+              name: http
+              protocol: TCP
+            - containerPort: 9300
+              name: transport
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data
+              name: storage
+        - name: kibana
+          image: bobrik/kibana
+          env:
+            - name: KIBANA_ES_URL
+              value: "http://127.0.0.1:9200"
+            - name: KUBERNETES_TRUST_CERT
+              value: "true"
+          ports:
+            - containerPort: 5601
+              name: http
+              protocol: TCP
+      volumes:
+        - name: storage
+          source:
+            emptyDir: {}
